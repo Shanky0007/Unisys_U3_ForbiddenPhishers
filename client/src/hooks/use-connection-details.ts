@@ -6,7 +6,7 @@ import { backendUrl } from '@/config/backendUrl';
 
 const ONE_MINUTE_IN_MILLISECONDS = 60 * 1000;
 const CONN_DETAILS_ENDPOINT =
-  import.meta.env.NEXT_PUBLIC_CONN_DETAILS_ENDPOINT ?? `${backendUrl}/api/v1/livekit/connection-details`;
+  import.meta.env.NEXT_PUBLIC_CONN_DETAILS_ENDPOINT ?? 'http://localhost:8000/api/v1/livekit/connection-details';
 
 export default function useConnectionDetails(appConfig: AppConfig) {
   // Generate room connection details, including:
