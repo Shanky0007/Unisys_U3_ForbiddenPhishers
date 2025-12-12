@@ -9,7 +9,7 @@ import time
 from contextlib import asynccontextmanager
 from typing import Optional
 
-from fastapi import FastAPI, HTTPException, BackgroundTasks, File, UploadFile, Request, Cookie, Depends
+from fastapi import FastAPI, HTTPException, Header, File, UploadFile, Request, Cookie
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
@@ -17,7 +17,7 @@ from dotenv import load_dotenv
 import io
 
 # Load environment variables
-load_dotenv()
+load_dotenv('.env.local')
 
 from src.models.career_profile import CareerProfile
 from src.models.state import CareerSimulationState, CareerMatcherResult, CareerFit
@@ -875,6 +875,114 @@ def _state_to_dict(state: dict) -> dict:
         "warnings": state.get("warnings", []),
         "errors": state.get("errors", []),
         "processing_time_ms": state.get("processing_time_ms", {}),
+    }
+
+
+# ============ LiveKit Voice Agent Endpoints ============
+
+class LiveKitConnectionRequest(BaseModel):
+    """Request model for LiveKit connection details"""
+    room_config: Optional[dict] = None
+
+
+class LiveKitConnectionResponse(BaseModel):
+    """Response model for LiveKit connection details"""
+    serverUrl: str
+    roomName: str
+    participantName: str
+    participantToken: str
+
+
+@app.post("/api/v1/livekit/connection-details", response_model=LiveKitConnectionResponse)
+async def get_livekit_connection_details(
+    roomName: str = "dashboard-room",
+    participantName: str = "user",
+    x_sandbox_id: Optional[str] = Header(None, alias="X-Sandbox-Id"),
+):
+    """
+    Generate LiveKit connection details for the voice agent.
+    
+    This endpoint creates a room access token that allows the frontend
+    to connect to the LiveKit room where the career counselor voice agent runs.
+    """
+    if not LIVEKIT_AVAILABLE:
+        raise HTTPException(
+            status_code=503,
+            detail="LiveKit SDK not available. Install with: pip install livekit-agents[google]"
+        )
+    
+    # Get LiveKit credentials from environment
+    livekit_url = os.getenv("LIVEKIT_URL")
+    api_key = os.getenv("LIVEKIT_API_KEY")
+    api_secret = os.getenv("LIVEKIT_API_SECRET")
+    
+    if not all([livekit_url, api_key, api_secret]):
+        raise HTTPException(
+            status_code=500,
+            detail="LiveKit credentials not configured. Set LIVEKIT_URL, LIVEKIT_API_KEY, and LIVEKIT_API_SECRET in .env.local"
+        )
+    
+    # Generate a unique room name if using default
+    if roomName == "dashboard-room":
+        room_name = f"career-counselor-{uuid.uuid4().hex[:8]}"
+    else:
+        room_name = roomName
+    
+    # Generate a unique participant identity
+    participant_identity = f"{participantName}-{uuid.uuid4().hex[:6]}"
+    
+    # Create the access token with agent dispatch for explicit agent dispatch
+    # When agent_name is set in voice_agent.py, automatic dispatch is disabled
+    # We must dispatch the agent via RoomConfiguration in the token
+    token = livekit_api.AccessToken(api_key, api_secret)
+    token.with_identity(participant_identity)
+    token.with_name(participantName)
+    token.with_grants(
+        livekit_api.VideoGrants(
+            room_join=True,
+            room=room_name,
+            can_publish=True,
+            can_subscribe=True,
+            can_publish_data=True,
+        )
+    )
+    
+    # Dispatch the telephony_agent when participant connects
+    # This is required because agent_name="telephony_agent" disables automatic dispatch
+    token.with_room_config(
+        livekit_api.RoomConfiguration(
+            agents=[
+                livekit_api.RoomAgentDispatch(agent_name="telephony_agent")
+            ]
+        )
+    )
+    
+    # Token expires in 1 hour
+    jwt_token = token.to_jwt()
+    
+    return LiveKitConnectionResponse(
+        serverUrl=livekit_url,
+        roomName=room_name,
+        participantName=participant_identity,
+        participantToken=jwt_token,
+    )
+
+
+@app.get("/api/v1/livekit/status")
+async def get_livekit_status():
+    """Check if LiveKit is properly configured"""
+    livekit_url = os.getenv("LIVEKIT_URL")
+    api_key = os.getenv("LIVEKIT_API_KEY")
+    api_secret = os.getenv("LIVEKIT_API_SECRET")
+    google_api_key = os.getenv("GOOGLE_API_KEY")
+    
+    return {
+        "livekit_sdk_available": LIVEKIT_AVAILABLE,
+        "livekit_url_configured": bool(livekit_url),
+        "livekit_api_key_configured": bool(api_key),
+        "livekit_api_secret_configured": bool(api_secret),
+        "google_api_key_configured": bool(google_api_key),
+        "voice_agent_ready": all([LIVEKIT_AVAILABLE, livekit_url, api_key, api_secret, google_api_key]),
     }
 
 
