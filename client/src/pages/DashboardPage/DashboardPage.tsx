@@ -64,6 +64,8 @@ import {
 } from 'recharts';
 import { useSimulationStore } from '@/lib/store';
 import type { CareerPath } from '@/lib/api';
+import EmbedPopupAgentClient from '@/components/embed-popup/agent-client';
+import { APP_CONFIG_DEFAULTS } from '@/app-config';
 
 // Color schemes
 const COLORS = {
@@ -81,7 +83,7 @@ const PIE_COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#ef4444', '#3b8
 
 export default function DashboardPage() {
   const navigate = useNavigate();
-  const { result, reset, selectedCareer, resetToCareerSelection } = useSimulationStore();
+  const { result, reset, profile, selectedCareer, resetToCareerSelection } = useSimulationStore();
   const [activePathType, setActivePathType] = useState<string>('realistic');
 
   useEffect(() => {
@@ -121,33 +123,6 @@ export default function DashboardPage() {
   const decisionRationale = dashboard_data?.decision_rationale || [];
   const topRecommendations = dashboard_data?.top_recommendations || [];
   const immediateActions = dashboard_data?.immediate_actions || [];
-  
-  // Currency formatting helper
-  const currencySymbol = financial_analysis?.currency_symbol || '$';
-  const currencyCode = financial_analysis?.currency || 'USD';
-  
-  const formatCurrency = (value: number, compact: boolean = false): string => {
-    if (compact) {
-      if (currencyCode === 'INR') {
-        // Indian numbering: lakhs and crores
-        if (value >= 10000000) {
-          return `${currencySymbol}${(value / 10000000).toFixed(1)}Cr`;
-        } else if (value >= 100000) {
-          return `${currencySymbol}${(value / 100000).toFixed(1)}L`;
-        } else if (value >= 1000) {
-          return `${currencySymbol}${(value / 1000).toFixed(0)}K`;
-        }
-      } else {
-        // Western numbering: K, M
-        if (value >= 1000000) {
-          return `${currencySymbol}${(value / 1000000).toFixed(1)}M`;
-        } else if (value >= 1000) {
-          return `${currencySymbol}${(value / 1000).toFixed(0)}K`;
-        }
-      }
-    }
-    return `${currencySymbol}${value.toLocaleString()}`;
-  };
   
   // Fallback risk breakdown if not available from dashboard_data
   const riskBreakdown = riskBreakdownData.length > 0 ? riskBreakdownData : (risk_assessment
@@ -408,7 +383,7 @@ export default function DashboardPage() {
                 <div>
                   <p className="text-sm text-muted-foreground">Investment</p>
                   <p className="text-2xl font-bold">
-                    {formatCurrency(financial_analysis?.total_investment_required || 0, true)}
+                    ${((financial_analysis?.total_investment_required || 0) / 1000).toFixed(0)}K
                   </p>
                 </div>
               </div>
@@ -424,7 +399,7 @@ export default function DashboardPage() {
                 <div>
                   <p className="text-sm text-muted-foreground">Expected Salary</p>
                   <p className="text-2xl font-bold">
-                    {formatCurrency(recommendedPath?.final_expected_salary || 0, true)}
+                    ${((recommendedPath?.final_expected_salary || 0) / 1000).toFixed(0)}K
                   </p>
                 </div>
               </div>
@@ -485,7 +460,7 @@ export default function DashboardPage() {
                         <p className="text-sm text-muted-foreground mb-2">{path.path_label}</p>
                         <div className="flex items-center gap-4 text-xs text-muted-foreground">
                           <span>{path.total_years} years</span>
-                          <span>{formatCurrency(path.final_expected_salary, true)}</span>
+                          <span>${(path.final_expected_salary / 1000).toFixed(0)}K</span>
                         </div>
                       </div>
                     );
@@ -573,7 +548,7 @@ export default function DashboardPage() {
                                               {milestone.estimated_hours > 0 &&
                                                 `${milestone.estimated_hours}h`}
                                               {milestone.estimated_cost > 0 &&
-                                                ` • ${formatCurrency(milestone.estimated_cost)}`}
+                                                ` • $${milestone.estimated_cost.toLocaleString()}`}
                                             </p>
                                           </div>
                                         </div>
@@ -661,8 +636,8 @@ export default function DashboardPage() {
                     <LineChart data={salaryData}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="year" />
-                      <YAxis tickFormatter={(v) => formatCurrency(v, true)} />
-                      <Tooltip formatter={(v: number) => formatCurrency(v)} />
+                      <YAxis tickFormatter={(v) => `$${v / 1000}K`} />
+                      <Tooltip formatter={(v: number) => `$${v.toLocaleString()}`} />
                       <Legend />
                       <Line
                         type="monotone"
@@ -1015,7 +990,7 @@ export default function DashboardPage() {
                     <DollarSign className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
                     <p className="text-sm text-muted-foreground">Total Investment</p>
                     <p className="text-3xl font-bold">
-                      {formatCurrency(financial_analysis?.total_investment_required || 0)}
+                      ${financial_analysis?.total_investment_required?.toLocaleString() || 0}
                     </p>
                   </div>
                 </CardContent>
@@ -1051,7 +1026,7 @@ export default function DashboardPage() {
                     <Target className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
                     <p className="text-sm text-muted-foreground">10-Year Earnings</p>
                     <p className="text-3xl font-bold text-blue-600">
-                      {formatCurrency(financial_analysis?.ten_year_projected_earnings || 0, true)}
+                      ${((financial_analysis?.ten_year_projected_earnings || 0) / 1000000).toFixed(1)}M
                     </p>
                   </div>
                 </CardContent>
@@ -1098,7 +1073,7 @@ export default function DashboardPage() {
                               <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
                             ))}
                           </Pie>
-                          <Tooltip formatter={(v: number) => formatCurrency(v)} />
+                          <Tooltip formatter={(v: number) => `$${v.toLocaleString()}`} />
                         </PieChart>
                       </ResponsiveContainer>
                     </div>
@@ -1118,8 +1093,8 @@ export default function DashboardPage() {
                       <BarChart data={financial_analysis?.yearly_financials || []}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="year_number" />
-                        <YAxis tickFormatter={(v) => formatCurrency(v, true)} />
-                        <Tooltip formatter={(v: number) => formatCurrency(v)} />
+                        <YAxis tickFormatter={(v) => `$${v / 1000}K`} />
+                        <Tooltip formatter={(v: number) => `$${v.toLocaleString()}`} />
                         <Legend />
                         <Bar dataKey="total_investment" name="Investment" fill="#ff7300" />
                         <Bar dataKey="expected_income" name="Income" fill="#82ca9d" />
@@ -1725,6 +1700,7 @@ export default function DashboardPage() {
           </TabsContent>
         </Tabs>
       </div>
+      <EmbedPopupAgentClient appConfig={APP_CONFIG_DEFAULTS} />
     </div>
   );
 }
