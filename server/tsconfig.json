@@ -1,0 +1,32 @@
+{
+  "compilerOptions": {
+    /* ---- File Paths ---- */
+    "outDir": "./dist",
+
+    /* ---- Target Environment ---- */
+    "target": "ES2020",
+    "module": "CommonJS",
+    "moduleResolution": "node",
+
+    /* ---- Node typings ---- */
+    "types": ["node"],
+    "lib": ["ESNext"],
+
+    /* ---- Output Options ---- */
+    "sourceMap": true,
+    "declaration": true,
+    "declarationMap": true,
+
+    /* ---- Strict Type Safety ---- */
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+
+    /* ---- Import Behavior ---- */
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "skipLibCheck": true
+  },
+  "include": ["src", "generated"]
+}
