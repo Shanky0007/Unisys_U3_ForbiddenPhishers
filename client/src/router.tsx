@@ -9,6 +9,9 @@ import VerificationEmailSent from "@/pages/EmailVerification/VerificationEmailSe
 import VerificationStatus from "@/pages/EmailVerification/VerificationStatus";
 import ForgotPassword from "@/pages/ForgotPassword/ForgotPassword";
 import PasswordResetForm from "@/pages/ForgotPassword/PasswordResetForm";
+import SimulatePage from "./pages/SimulatePage/SimulatePage";
+import CareerFitsPage from "./pages/CareerFitsPage/CareerFitsPage";
+import DashboardPage from "./pages/DashboardPage/DashboardPage";
 
 const mainLayoutRoutes = [
     {
@@ -56,6 +59,18 @@ const router = createBrowserRouter([
             {
                 path: "/reset-password/:resetToken",
                 element: <PasswordResetForm />,
+            },
+            {
+                path: "/simulate",
+                element: <SimulatePage />
+            },
+            {
+                path: "/career-fits",
+                element: <CareerFitsPage />,
+            },
+            {
+                path: "/dashboard",
+                element: <DashboardPage />,
             }
 
         ],
