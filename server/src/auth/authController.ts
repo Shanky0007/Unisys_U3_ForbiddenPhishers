@@ -23,7 +23,7 @@ const { verify, sign } = pkg;
 //TODO : Add Data Validation (Zod etc.)
 
 const signup = async (req: Request, res: Response, next: NextFunction) => {
-  const { username, email, password } = req.body;
+  const { username, email, phone, password } = req.body;
 
   try {
     const existingUser = await prisma.user.findUnique({
@@ -43,6 +43,7 @@ const signup = async (req: Request, res: Response, next: NextFunction) => {
       data: {
         username,
         email,
+        phone,
         password: hashedPassword,
       },
     });

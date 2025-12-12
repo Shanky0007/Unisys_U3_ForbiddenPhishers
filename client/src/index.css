@@ -200,4 +200,71 @@
   .hover\:bg-neutral-50:hover {
     background-color: #fafafa;
   }
+
+  /* Phone Input Custom Styles */
+  .PhoneInput {
+    display: flex;
+    align-items: center;
+  }
+
+  .PhoneInputInput {
+    flex: 1;
+    min-width: 0;
+    border: none;
+    outline: none;
+    padding: 0.5rem;
+    font-size: 0.875rem;
+    background: transparent;
+  }
+
+  .PhoneInputInput:focus {
+    outline: none;
+  }
+
+  .PhoneInputCountry {
+    margin-right: 0.5rem;
+    display: flex;
+    align-items: center;
+  }
+
+  .PhoneInputCountrySelect {
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    padding: 0.25rem;
+  }
+
+  .PhoneInputCountrySelect:focus {
+    outline: 2px solid #6b7b3f;
+    outline-offset: 2px;
+    border-radius: 0.25rem;
+  }
+
+  .PhoneInputCountryIcon {
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 0.25rem;
+    overflow: hidden;
+  }
+
+  .PhoneInputCountryIcon--border {
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.1);
+  }
+
+  .phone-input-custom {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    border: 1px solid #d1d5db;
+    border-radius: 0.375rem;
+    padding: 0.5rem 0.75rem;
+    background-color: white;
+    transition: all 0.2s;
+  }
+
+  .phone-input-custom:focus-within {
+    outline: 2px solid #6b7b3f;
+    outline-offset: 2px;
+    border-color: #6b7b3f;
+  }
 }

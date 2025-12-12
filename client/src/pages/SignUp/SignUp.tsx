@@ -7,13 +7,15 @@ import { AlertCircle, Eye, EyeOff, LinkIcon, Loader2 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { signupSchema} from "@/validation/userSchema";
 import type{ signupUser } from "@/validation/userSchema";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import type{ SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import SocialButtons from "@/components/Auth/SocialButtons";
 import { signUp } from "@/api/authService";
 import type{ ErrorResponse } from "@/types/auth";
 import { AxiosError } from "axios";
+import PhoneInput from "react-phone-number-input";
+import "react-phone-number-input/style.css";
 
 type signupFields = signupUser;
 
@@ -25,6 +27,7 @@ const SignUpForm: React.FC = () => {
     register,
     handleSubmit,
     setError,
+    control,
     formState: { errors, isSubmitting },
   } = useForm<signupFields>({ resolver: zodResolver(signupSchema) });
 
@@ -126,6 +129,30 @@ const SignUpForm: React.FC = () => {
                 />
                 {errors.email && (
                   <p className="text-red-500">{errors.email.message}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label
+                  htmlFor="phone"
+                  className="text-sm font-medium text-gray-700"
+                >
+                  Phone Number
+                </Label>
+                <Controller
+                  name="phone"
+                  control={control}
+                  render={({ field: { onChange, value } }) => (
+                    <PhoneInput
+                      international
+                      defaultCountry="US"
+                      value={value}
+                      onChange={onChange}
+                      className="phone-input-custom transition-all duration-200 focus:ring-2 focus:ring-olive-500 rounded-md border border-gray-300 px-3 py-2"
+                    />
+                  )}
+                />
+                {errors.phone && (
+                  <p className="text-red-500">{errors.phone.message}</p>
                 )}
               </div>
               <div className="space-y-2">

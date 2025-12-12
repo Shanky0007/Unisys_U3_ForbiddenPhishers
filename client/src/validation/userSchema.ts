@@ -14,6 +14,18 @@ export const signupSchema = z.object({
         "Username can only contain letters, numbers, and underscores, with no spaces or special characters.",
     }),
   email: z.string().email("Invalid email address"),
+  phone: z
+    .string()
+    .min(1, "Phone number is required")
+    .refine(
+      (value) => {
+        // react-phone-number-input returns E.164 format: +[country code][number]
+        return /^\+[1-9]\d{1,14}$/.test(value);
+      },
+      {
+        message: "Please enter a valid phone number",
+      }
+    ),
   password: z
     .string()
     .min(8, "Password must be at least 8 characters long"),
