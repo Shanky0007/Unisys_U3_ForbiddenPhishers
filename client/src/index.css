@@ -118,3 +118,86 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Custom Olive Color Palette */
+@layer utilities {
+  .bg-olive-50 {
+    background-color: #f6f7f3;
+  }
+  .bg-olive-100 {
+    background-color: #e8ebe0;
+  }
+  .bg-olive-200 {
+    background-color: #d1d7c1;
+  }
+  .bg-olive-600 {
+    background-color: #6b7b3f;
+  }
+  .bg-olive-700 {
+    background-color: #586632;
+  }
+  .text-olive-50 {
+    color: #f6f7f3;
+  }
+  .text-olive-100 {
+    color: #e8ebe0;
+  }
+  .text-olive-600 {
+    color: #6b7b3f;
+  }
+  .text-olive-700 {
+    color: #586632;
+  }
+  .border-olive-200 {
+    border-color: #d1d7c1;
+  }
+  .border-olive-600 {
+    border-color: #6b7b3f;
+  }
+  .hover\:bg-olive-50:hover {
+    background-color: #f6f7f3;
+  }
+  .hover\:bg-olive-700:hover {
+    background-color: #586632;
+  }
+  .hover\:text-olive-600:hover {
+    color: #6b7b3f;
+  }
+  .hover\:text-olive-700:hover {
+    color: #586632;
+  }
+  .hover\:text-olive-800:hover {
+    color: #4a5529;
+  }
+  .focus\:ring-olive-500:focus {
+    --tw-ring-color: #7a8a48;
+    --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);
+    --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color);
+    box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000);
+  }
+  .ring-olive-500 {
+    --tw-ring-color: #7a8a48;
+  }
+  .from-olive-50 {
+    --tw-gradient-from: #f6f7f3;
+    --tw-gradient-to: rgb(246 247 243 / 0);
+    --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+  }
+  .from-olive-600 {
+    --tw-gradient-from: #6b7b3f;
+    --tw-gradient-to: rgb(107 123 63 / 0);
+    --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+  }
+  .to-olive-700 {
+    --tw-gradient-to: #586632;
+  }
+  .to-neutral-50 {
+    --tw-gradient-to: #fafafa;
+  }
+  .bg-neutral-50 {
+    background-color: #fafafa;
+  }
+  .hover\:bg-neutral-50:hover {
+    background-color: #fafafa;
+  }
+}

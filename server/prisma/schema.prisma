@@ -64,3 +64,4 @@ model PasswordResetToken {
   isUsed           Boolean  @default(false)
   createdAt        DateTime @default(now())
 }
+
