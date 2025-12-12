@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+import type { RootState } from '@/store/store';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -29,7 +31,7 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { useSimulationStore } from '@/lib/store';
-import { analyzeCareerFits } from '@/lib/api';
+import { analyzeCareerFits, saveUserProfile } from '@/lib/api';
 import type { CareerProfile } from '@/lib/api';
 
 const STEPS = [
@@ -136,6 +138,7 @@ const INVESTMENT_CAPACITIES = [
 
 export default function SimulatePage() {
   const navigate = useNavigate();
+  const accessToken = useSelector((state: RootState) => state.auth.accessToken);
   const {
     profile,
     updateProfile,
@@ -222,6 +225,9 @@ export default function SimulatePage() {
     setError(null);
 
     try {
+      // Save profile to MongoDB first (pass access token for user identification)
+      await saveUserProfile(profile as CareerProfile, accessToken || undefined);
+      
       // Stage 1: Analyze and get top 3 career fits
       const result = await analyzeCareerFits(profile as CareerProfile);
       setMatchingResult(result);
