@@ -9,7 +9,7 @@ import time
 from contextlib import asynccontextmanager
 from typing import Optional
 
-from fastapi import FastAPI, HTTPException, BackgroundTasks, File, UploadFile
+from fastapi import FastAPI, HTTPException, BackgroundTasks, File, UploadFile, Request, Cookie, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
@@ -28,6 +28,16 @@ from src.graph import (
     run_career_simulation_for_selected_async,
     career_simulator,
 )
+from src.database import (
+    connect_to_mongodb,
+    close_mongodb_connection,
+    save_user_profile,
+    get_user_profile,
+    get_user_profiles_by_user_id,
+    update_user_profile,
+    delete_user_profile,
+)
+from src.auth import get_current_user_id, get_token_from_request, get_user_id_from_token
 
 
 # In-memory session storage for two-stage process
@@ -40,8 +50,12 @@ _session_store: dict[str, dict] = {}
 async def lifespan(app: FastAPI):
     """Application lifespan handler"""
     print("🚀 Career Path Simulator starting up...")
+    # Connect to MongoDB
+    await connect_to_mongodb()
     print("📊 Multi-agent system initialized")
     yield
+    # Close MongoDB connection
+    await close_mongodb_connection()
     print("👋 Career Path Simulator shutting down...")
 
 
@@ -192,6 +206,28 @@ class SelectCareerRequest(BaseModel):
     career_index: int  # 0, 1, or 2
 
 
+# ============ Save Profile Models ============
+
+class SaveProfileRequest(BaseModel):
+    """Request model for saving user profile"""
+    profile: dict
+    user_id: Optional[str] = None
+
+
+class SaveProfileResponse(BaseModel):
+    """Response model for save profile"""
+    success: bool
+    profile_id: str
+    message: str
+
+
+class GetProfileResponse(BaseModel):
+    """Response model for getting profile"""
+    success: bool
+    profile: Optional[dict] = None
+    message: str
+
+
 # API Endpoints
 
 @app.get("/", response_model=dict)
@@ -223,6 +259,119 @@ async def health_check():
             "DashboardFormatter",
         ],
     )
+
+
+# ============ Profile Save/Load Endpoints ============
+
+@app.post("/profile/save", response_model=SaveProfileResponse)
+async def save_profile(
+    request: SaveProfileRequest,
+    http_request: Request,
+    access_token: Optional[str] = Cookie(None)
+):
+    """
+    Save user profile to MongoDB.
+    
+    This endpoint saves the career profile form data to the database
+    for future reference and analysis. It extracts the user ID from
+    the JWT token in the Authorization header or access_token cookie.
+    """
+    try:
+        # Extract user ID from JWT token
+        user_id = await get_current_user_id(http_request, access_token)
+        
+        if user_id:
+            print(f"✅ User ID extracted from token: {user_id}")
+        else:
+            # Log warning but still allow saving without user ID
+            print("⚠️ No user ID found in token, saving profile without user association")
+        
+        result = await save_user_profile(request.profile, user_id)
+        return SaveProfileResponse(
+            success=True,
+            profile_id=result["profile_id"],
+            message=result["message"]
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to save profile: {str(e)}"
+        )
+
+
+@app.get("/profile/{profile_id}", response_model=GetProfileResponse)
+async def get_profile(profile_id: str):
+    """
+    Get a saved profile by ID.
+    """
+    try:
+        profile = await get_user_profile(profile_id)
+        if profile:
+            return GetProfileResponse(
+                success=True,
+                profile=profile,
+                message="Profile retrieved successfully"
+            )
+        else:
+            return GetProfileResponse(
+                success=False,
+                profile=None,
+                message="Profile not found"
+            )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to get profile: {str(e)}"
+        )
+
+
+@app.get("/profiles/user/{user_id}")
+async def get_profiles_by_user(user_id: str):
+    """
+    Get all profiles for a specific user.
+    """
+    try:
+        profiles = await get_user_profiles_by_user_id(user_id)
+        return {
+            "success": True,
+            "profiles": profiles,
+            "count": len(profiles)
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to get profiles: {str(e)}"
+        )
+
+
+@app.put("/profile/{profile_id}")
+async def update_profile(profile_id: str, request: SaveProfileRequest):
+    """
+    Update an existing profile.
+    """
+    try:
+        result = await update_user_profile(profile_id, request.profile)
+        return result
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to update profile: {str(e)}"
+        )
+
+
+@app.delete("/profile/{profile_id}")
+async def delete_profile(profile_id: str):
+    """
+    Delete a profile.
+    """
+    try:
+        result = await delete_user_profile(profile_id)
+        return result
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to delete profile: {str(e)}"
+        )
 
 
 # ============ Resume Parsing Endpoint ============
