@@ -399,7 +399,74 @@ export interface CareerMatchingResponse {
   errors: string[];
 }
 
+// ============ Save Profile Types ============
+
+export interface SaveProfileResponse {
+  success: boolean;
+  profile_id: string;
+  message: string;
+}
+
+export interface GetProfileResponse {
+  success: boolean;
+  profile: CareerProfile | null;
+  message: string;
+}
+
 // API Functions
+
+// ============ Save Profile ============
+export async function saveUserProfile(
+  profile: CareerProfile, 
+  accessToken?: string
+): Promise<SaveProfileResponse> {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  
+  // Add Authorization header if access token is provided
+  if (accessToken) {
+    headers['Authorization'] = `Bearer ${accessToken}`;
+  }
+  
+  const response = await fetch(`${API_BASE_URL}/profile/save`, {
+    method: 'POST',
+    headers,
+    credentials: 'include', // Include cookies
+    body: JSON.stringify({ profile }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
+    throw new Error(error.detail || 'Failed to save profile');
+  }
+
+  return response.json();
+}
+
+// ============ Get Profile ============
+export async function getUserProfile(profileId: string): Promise<GetProfileResponse> {
+  const response = await fetch(`${API_BASE_URL}/profile/${profileId}`);
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
+    throw new Error(error.detail || 'Failed to get profile');
+  }
+
+  return response.json();
+}
+
+// ============ Get User's Profiles ============
+export async function getUserProfiles(userId: string): Promise<{ success: boolean; profiles: CareerProfile[]; count: number }> {
+  const response = await fetch(`${API_BASE_URL}/profiles/user/${userId}`);
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
+    throw new Error(error.detail || 'Failed to get profiles');
+  }
+
+  return response.json();
+}
 
 // ============ Stage 1: Analyze Career Fits ============
 export async function analyzeCareerFits(profile: CareerProfile): Promise<CareerMatchingResponse> {
