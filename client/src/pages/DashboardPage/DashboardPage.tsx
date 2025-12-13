@@ -29,7 +29,6 @@ import {
   GraduationCap,
   ChevronRight,
   RotateCcw,
-  Download,
   Share2,
   Lightbulb,
   AlertCircle,
@@ -41,6 +40,8 @@ import {
   ArrowRight,
   Info,
   MessageSquare,
+  Loader2,
+  FileText,
 } from 'lucide-react';
 import {
   LineChart,
@@ -66,6 +67,7 @@ import { useSimulationStore } from '@/lib/store';
 import type { CareerPath } from '@/lib/api';
 import EmbedPopupAgentClient from '@/components/embed-popup/agent-client';
 import { APP_CONFIG_DEFAULTS } from '@/app-config';
+import { exportDashboardToPDF } from '@/lib/pdfExport';
 
 // Color schemes
 const COLORS = {
@@ -85,6 +87,7 @@ export default function DashboardPage() {
   const navigate = useNavigate();
   const { result, reset, profile, selectedCareer, resetToCareerSelection } = useSimulationStore();
   const [activePathType, setActivePathType] = useState<string>('realistic');
+  const [isExporting, setIsExporting] = useState<boolean>(false);
 
   useEffect(() => {
     if (!result) {
@@ -97,6 +100,26 @@ export default function DashboardPage() {
       setActivePathType(result.timeline.recommended_path);
     }
   }, [result]);
+
+  // PDF Export Handler
+  const handleExportPDF = async () => {
+    if (!result) return;
+    
+    setIsExporting(true);
+    try {
+      await exportDashboardToPDF(result, profile, selectedCareer, {
+        includeTimeline: true,
+        includeFinancials: true,
+        includeRisks: true,
+        includeSkillGaps: true,
+        includeRecommendations: true,
+      });
+    } catch (error) {
+      console.error('Error exporting PDF:', error);
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   if (!result) {
     return null;
@@ -172,9 +195,23 @@ export default function DashboardPage() {
               <RotateCcw className="h-4 w-4 mr-2" />
               New Simulation
             </Button>
-            <Button variant="outline">
-              <Download className="h-4 w-4 mr-2" />
-              Export
+            <Button 
+              variant="outline" 
+              onClick={handleExportPDF}
+              disabled={isExporting}
+              className="min-w-[120px]"
+            >
+              {isExporting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Exporting...
+                </>
+              ) : (
+                <>
+                  <FileText className="h-4 w-4 mr-2" />
+                  Export PDF
+                </>
+              )}
             </Button>
             <Button variant="outline">
               <Share2 className="h-4 w-4 mr-2" />
@@ -1067,7 +1104,7 @@ export default function DashboardPage() {
                             innerRadius={60}
                             outerRadius={100}
                             dataKey="value"
-                            label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                            label={({ name, percent }) => `${name}: ${((percent ?? 0) * 100).toFixed(0)}%`}
                           >
                             {investmentBreakdown.map((_entry, index) => (
                               <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
@@ -1261,13 +1298,13 @@ export default function DashboardPage() {
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
                         <Pie
-                          data={riskBreakdown}
+                          data={riskBreakdown as Array<{ name: string; value: number; fill: string }>}
                           cx="50%"
                           cy="50%"
                           innerRadius={60}
                           outerRadius={80}
                           dataKey="value"
-                          label={({ name, value }) => `${name}: ${value.toFixed(0)}`}
+                          label={({ name, value }) => `${name}: ${(value ?? 0).toFixed(0)}`}
                         >
                           {riskBreakdown.map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={entry.fill} />
