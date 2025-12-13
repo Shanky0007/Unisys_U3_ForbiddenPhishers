@@ -40,6 +40,9 @@ import {
 import { useSimulationStore } from '@/lib/store';
 import { simulateSelectedCareer } from '@/lib/api';
 import type { CareerFit } from '@/lib/api';
+import { useSelector } from 'react-redux';
+import type { RootState } from '@/store/store';
+
 
 const difficultyColors: Record<string, string> = {
   'Easy': 'bg-green-100 text-green-800',
@@ -64,7 +67,7 @@ interface CareerCardProps {
 
 function CareerCard({ career, isSelected, onSelect, onExplore, index }: CareerCardProps) {
   const [expanded, setExpanded] = useState(false);
-  
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -338,7 +341,7 @@ export default function CareerFitsPage() {
     isLoading,
     loadingStage,
   } = useSimulationStore();
-  
+    const accessToken = useSelector((state: RootState) => state.auth.accessToken);
   if (!matchingResult || !sessionId) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -364,7 +367,7 @@ export default function CareerFitsPage() {
     setError(null);
     
     try {
-      const result = await simulateSelectedCareer(sessionId, selectedCareerIndex);
+      const result = await simulateSelectedCareer(sessionId, selectedCareerIndex, accessToken || undefined);
       setResult(result);
       navigate('/dashboard');
     } catch (err) {

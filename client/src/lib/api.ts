@@ -489,12 +489,14 @@ export async function analyzeCareerFits(profile: CareerProfile): Promise<CareerM
 // ============ Stage 2: Simulate Selected Career ============
 export async function simulateSelectedCareer(
   sessionId: string, 
-  careerIndex: number
+  careerIndex: number,
+  accessToken?: string
 ): Promise<SimulationResponse> {
   const response = await fetch(`${API_BASE_URL}/simulate/selected`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      ...(accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {}),
     },
     body: JSON.stringify({ 
       session_id: sessionId, 
