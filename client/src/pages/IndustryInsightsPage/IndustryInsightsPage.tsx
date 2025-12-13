@@ -169,7 +169,7 @@ export default function IndustryInsightsPage() {
             </span>
           </h1>
           <p className="text-lg text-muted-foreground">
-            Powered by Tavily Search & OpenAI for accurate, real-time data
+            Accurate, real-time data
           </p>
         </div>
 

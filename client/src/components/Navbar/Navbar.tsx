@@ -231,6 +231,12 @@ const Navbar = () => {
                             isActive={activeLink === "/simulate"}
                             onClick={() => setActiveLink("/simulate")}
                         />
+                        <NavLink
+                            href="/industry-insights"
+                            label="Industry Insights"
+                            isActive={activeLink === "/industry-insights"}
+                            onClick={() => setActiveLink("/industry-insights")}
+                        />
                     </nav>
 
                     <div className="flex items-center">
@@ -301,6 +307,15 @@ const Navbar = () => {
                                                 isActive={activeLink === "/simulate"}
                                                 onClick={() => {
                                                     setActiveLink("/simulate");
+                                                    setIsOpen(false);
+                                                }}
+                                            />
+                                            <MobileNavLink
+                                                href="/industry-insights"
+                                                label="Industry Insights"
+                                                isActive={activeLink === "/industry-insights"}
+                                                onClick={() => {
+                                                    setActiveLink("/industry-insights");
                                                     setIsOpen(false);
                                                 }}
                                             />
