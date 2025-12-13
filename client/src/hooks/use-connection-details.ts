@@ -3,6 +3,8 @@ import { decodeJwt } from 'jose';
 import { type ConnectionDetails } from '@/lib/types';
 import { type AppConfig } from '@/lib/types';
 import { backendUrl } from '@/config/backendUrl';
+import { useSelector } from 'react-redux';
+import type { RootState } from '@/store/store';
 
 const ONE_MINUTE_IN_MILLISECONDS = 60 * 1000;
 const CONN_DETAILS_ENDPOINT =
@@ -19,7 +21,7 @@ export default function useConnectionDetails(appConfig: AppConfig) {
   // own participant name, and possibly to choose from existing rooms to join.
 
   const [connectionDetails, setConnectionDetails] = useState<ConnectionDetails | null>(null);
-
+  const accessToken = useSelector((state: RootState) => state.auth.accessToken);
   const fetchConnectionDetails = useCallback(async () => {
     setConnectionDetails(null);
     const url = new URL(CONN_DETAILS_ENDPOINT, window.location.origin);
@@ -32,6 +34,7 @@ export default function useConnectionDetails(appConfig: AppConfig) {
         headers: {
           'Content-Type': 'application/json',
           'X-Sandbox-Id': appConfig.sandboxId ?? '',
+          'Authorization': `Bearer ${accessToken }`,
         },
         body: JSON.stringify({
           room_config: appConfig.agentName
