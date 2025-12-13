@@ -6,7 +6,7 @@ import { useSelector, useDispatch } from "react-redux";
 import type { RootState } from "@/store/store";
 import { logout } from "@/store/auth/authSlice";
 import { motion } from "framer-motion";
-import { Menu, X, User, LogOut, Sparkles } from "lucide-react";
+import { Menu, X, LogOut, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
     DropdownMenu,
