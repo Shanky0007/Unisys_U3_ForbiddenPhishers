@@ -7,6 +7,7 @@ import globalErrorHandler from './middleware/globalErrorHandler';
 import passport from 'passport'
 import passportConfig from './config/passport';
 import authRouter from './auth/authRoute';
+import industryInsightsRouter from './routes/industryInsights';
 import mongoose from 'mongoose';
 
 config();
@@ -41,6 +42,7 @@ app.get('/', (req: Request, res: Response) => {
 });
 
 app.use('/api/v1/auth', authRouter);
+app.use('/api/v1/industry', industryInsightsRouter);
 
 
 
