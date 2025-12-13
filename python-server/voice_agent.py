@@ -5,6 +5,8 @@ Supports both web-based and inbound telephony (SIP) connections
 """
 
 import json
+import asyncio
+import os
 from dotenv import load_dotenv
 from livekit import agents, rtc, api
 from livekit.agents import AgentServer, AgentSession, Agent, room_io, RunContext
@@ -389,11 +391,11 @@ async def career_voice_agent(ctx: agents.JobContext):
     - User is identified by their phone number from the SIP participant
     """
     
-    # Connect to MongoDB for user verification
-    await connect_to_mongodb()
-    
-    # Connect to the room first
+    # Connect to the room first - this must happen quickly to avoid assignment timeout
     await ctx.connect()
+    
+    # Connect to MongoDB for user verification (do this after connecting to avoid timeout)
+    await connect_to_mongodb()
     
     # Wait for participant to connect
     participant = await ctx.wait_for_participant()
@@ -478,22 +480,32 @@ async def career_voice_agent(ctx: agents.JobContext):
     
     # For web connections, start the Beyond Presence avatar
     # Avatar provides a visual representation of the career counselor
+    avatar = None
     if not is_phone_call:
-        try:
-            print("🎭 Starting Beyond Presence avatar for web session...")
+        # Check if BEY_API_KEY is configured
+        bey_api_key = os.getenv("BEY_API_KEY")
+        if bey_api_key:
+            print("🎭 Initializing Beyond Presence avatar for web session...")
             avatar = bey.AvatarSession(
                 avatar_id="b9be11b8-89fb-4227-8f86-4a881393cbdb",  # Default Beyond Presence avatar
                 avatar_participant_identity="career-counselor-avatar",
                 avatar_participant_name="Career Counselor",
             )
-            # Start the avatar and wait for it to join
-            await avatar.start(session, room=ctx.room)
-            print("✅ Beyond Presence avatar started successfully")
-        except Exception as avatar_error:
-            print(f"⚠️ Failed to start avatar (continuing without): {avatar_error}")
-            # Continue without avatar if it fails - voice will still work
+        else:
+            print("ℹ️ BEY_API_KEY not configured - skipping avatar for web session")
     
-    # Start the session
+    # Start avatar FIRST (non-blocking), then session
+    # This order is critical for Beyond Presence to work correctly
+    if avatar:
+        try:
+            print("🎭 [DEBUG] Attempting to start Beyond Presence avatar...")
+            result = await avatar.start(session, room=ctx.room)
+            print(f"✅ [DEBUG] avatar.start() returned: {result}")
+        except Exception as avatar_error:
+            print(f"⚠️ [DEBUG] Failed to start avatar (continuing without): {avatar_error}")
+            avatar = None  # Continue without avatar
+    
+    # Start the session - this must happen quickly after ctx.connect()
     await session.start(
         room=ctx.room,
         agent=agent,
