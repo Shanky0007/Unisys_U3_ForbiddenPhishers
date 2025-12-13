@@ -32,6 +32,9 @@ from src.database import (
     get_user_profiles_by_user_id,
     update_user_profile,
     delete_user_profile,
+    save_career_roadmap,
+    get_career_roadmap_by_user_id,
+    delete_career_roadmap,
 )
 from src.auth import get_current_user_id, get_token_from_request, get_user_id_from_token
 
@@ -201,6 +204,7 @@ class SelectCareerRequest(BaseModel):
     """Request to select a career and start Stage 2"""
     session_id: str
     career_index: int  # 0, 1, or 2
+    user_id: Optional[str] = None  # Optional user ID to save roadmap
 
 
 # ============ Save Profile Models ============
@@ -368,6 +372,115 @@ async def delete_profile(profile_id: str):
         raise HTTPException(
             status_code=500,
             detail=f"Failed to delete profile: {str(e)}"
+        )
+
+
+# ============ Career Roadmap Endpoints ============
+
+@app.get("/roadmap/user/{user_id}")
+async def get_user_roadmap(user_id: str):
+    """
+    Get the career roadmap for a user.
+    Each user has only one active roadmap.
+    """
+    try:
+        roadmap = await get_career_roadmap_by_user_id(user_id)
+        if roadmap:
+            return {
+                "success": True,
+                "roadmap": roadmap,
+                "message": "Roadmap retrieved successfully"
+            }
+        else:
+            return {
+                "success": False,
+                "roadmap": None,
+                "message": "No roadmap found for this user"
+            }
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to get roadmap: {str(e)}"
+        )
+
+
+@app.get("/roadmap/me")
+async def get_my_roadmap(
+    http_request: Request,
+    access_token: Optional[str] = Cookie(None)
+):
+    """
+    Get the career roadmap for the currently authenticated user.
+    """
+    try:
+        user_id = await get_current_user_id(http_request, access_token)
+        if not user_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Authentication required to access your roadmap"
+            )
+        
+        roadmap = await get_career_roadmap_by_user_id(user_id)
+        if roadmap:
+            return {
+                "success": True,
+                "roadmap": roadmap,
+                "message": "Roadmap retrieved successfully"
+            }
+        else:
+            return {
+                "success": False,
+                "roadmap": None,
+                "message": "No roadmap found. Please select a career path first."
+            }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to get roadmap: {str(e)}"
+        )
+
+
+@app.delete("/roadmap/user/{user_id}")
+async def delete_user_roadmap(user_id: str):
+    """
+    Delete the career roadmap for a user.
+    """
+    try:
+        result = await delete_career_roadmap(user_id)
+        return result
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to delete roadmap: {str(e)}"
+        )
+
+
+@app.delete("/roadmap/me")
+async def delete_my_roadmap(
+    http_request: Request,
+    access_token: Optional[str] = Cookie(None)
+):
+    """
+    Delete the career roadmap for the currently authenticated user.
+    """
+    try:
+        user_id = await get_current_user_id(http_request, access_token)
+        if not user_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Authentication required to delete your roadmap"
+            )
+        
+        result = await delete_career_roadmap(user_id)
+        return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to delete roadmap: {str(e)}"
         )
 
 
@@ -573,7 +686,11 @@ async def analyze_career_fits(request: SimulationRequest):
 # ============ Stage 2: Full Simulation Endpoint ============
 
 @app.post("/simulate/selected", response_model=SimulationResponse)
-async def simulate_selected_career(request: SelectCareerRequest):
+async def simulate_selected_career(
+    request: SelectCareerRequest,
+    http_request: Request,
+    access_token: Optional[str] = Cookie(None)
+):
     """
     Stage 2: Run full simulation for the selected career.
     
@@ -587,6 +704,10 @@ async def simulate_selected_career(request: SelectCareerRequest):
     - DashboardFormatter: Formats data for visualization
     
     All agents provide detailed REASONING for every decision.
+    
+    If user is authenticated, the roadmap will be saved to the database.
+    Each user can only have ONE active roadmap - selecting a new career
+    will replace the existing roadmap.
     """
     start_time = time.time()
     
@@ -604,6 +725,18 @@ async def simulate_selected_career(request: SelectCareerRequest):
             status_code=400,
             detail="career_index must be 0, 1, or 2"
         )
+    
+    # Extract user ID from JWT token (primary method)
+    user_id = await get_current_user_id(http_request, access_token)
+    print(f"📝 User ID from JWT token: {user_id}")
+    
+    # Fallback to request body if provided
+    if not user_id and request.user_id:
+        user_id = request.user_id
+        print(f"📝 User ID from request body: {user_id}")
+    
+    if not user_id:
+        print(f"⚠️ No user_id found - check Authorization header or access_token cookie")
     
     try:
         # Get state from session
@@ -626,12 +759,45 @@ async def simulate_selected_career(request: SelectCareerRequest):
         
         # Include selected career info in summary
         summary = _extract_summary(result)
+        selected_career_info = None
         if selected:
-            summary["selected_career"] = {
+            selected_career_info = {
                 "title": selected.career_title,
                 "field": selected.career_field,
                 "fit_score": selected.overall_fit_score,
+                "tagline": getattr(selected, 'tagline', ''),
+                "difficulty_level": getattr(selected, 'difficulty_level', ''),
+                "time_to_entry": getattr(selected, 'time_to_entry', ''),
+                "typical_salary_range": getattr(selected, 'typical_salary_range', ''),
             }
+            summary["selected_career"] = selected_career_info
+        
+        # Prepare timeline data
+        timeline_data = _extract_timeline(result)
+        
+        # Save roadmap to database if user is authenticated
+        print(f"📝 Attempting to save roadmap. user_id={user_id}")
+        if user_id:
+            try:
+                roadmap_data = {
+                    "selected_career": selected_career_info,
+                    "dashboard_data": dashboard_data.model_dump() if dashboard_data else None,
+                    "timeline": timeline_data,
+                    "financial_analysis": financial.model_dump() if financial else None,
+                    "risk_assessment": risk.model_dump() if risk else None,
+                    "gap_analysis": gap.model_dump() if gap else None,
+                    "summary": summary,
+                }
+                print(f"📝 Roadmap data prepared, calling save_career_roadmap...")
+                roadmap_save_result = await save_career_roadmap(roadmap_data, user_id)
+                print(f"✅ Roadmap saved for user {user_id}: {roadmap_save_result['message']}")
+            except Exception as save_error:
+                print(f"⚠️ Failed to save roadmap: {save_error}")
+                import traceback
+                traceback.print_exc()
+                # Don't fail the request if roadmap save fails
+        else:
+            print(f"⚠️ No user_id available, roadmap NOT saved to database")
         
         return SimulationResponse(
             success=True,
@@ -639,7 +805,7 @@ async def simulate_selected_career(request: SelectCareerRequest):
             processing_time_ms=processing_time,
             summary=summary,
             dashboard_data=dashboard_data.model_dump() if dashboard_data else None,
-            timeline=_extract_timeline(result),
+            timeline=timeline_data,
             financial_analysis=financial.model_dump() if financial else None,
             risk_assessment=risk.model_dump() if risk else None,
             gap_analysis=gap.model_dump() if gap else None,
@@ -892,15 +1058,21 @@ class LiveKitConnectionResponse(BaseModel):
 
 @app.post("/api/v1/livekit/connection-details", response_model=LiveKitConnectionResponse)
 async def get_livekit_connection_details(
+    http_request: Request,
     roomName: str = "dashboard-room",
     participantName: str = "user",
     x_sandbox_id: Optional[str] = Header(None, alias="X-Sandbox-Id"),
+    access_token: Optional[str] = Cookie(None),
 ):
     """
     Generate LiveKit connection details for the voice agent.
     
     This endpoint creates a room access token that allows the frontend
     to connect to the LiveKit room where the career counselor voice agent runs.
+    
+    If a valid JWT token is provided (via Authorization header or access_token cookie),
+    the user_id will be embedded in the LiveKit token's metadata so the voice agent
+    can personalize the conversation based on the user's career roadmap.
     """
 
     # Get LiveKit credentials from environment
@@ -913,6 +1085,13 @@ async def get_livekit_connection_details(
             status_code=500,
             detail="LiveKit credentials not configured. Set LIVEKIT_URL, LIVEKIT_API_KEY, and LIVEKIT_API_SECRET in .env.local"
         )
+    
+    # Extract user_id from JWT token if provided
+    user_id = await get_current_user_id(http_request, access_token)
+    if user_id:
+        print(f"✅ LiveKit connection: User ID from JWT: {user_id}")
+    else:
+        print(f"⚠️ LiveKit connection: No user_id found in JWT token - anonymous session")
     
     # Generate a unique room name if using default
     if roomName == "dashboard-room":
@@ -938,6 +1117,13 @@ async def get_livekit_connection_details(
             can_publish_data=True,
         )
     )
+    
+    # Add user_id to participant attributes so voice agent can access it
+    # The voice agent reads this via participant.attributes["user_id"]
+    if user_id:
+        import json
+        token.with_attributes({"user_id": user_id})
+        print(f"✅ LiveKit token: Added user_id to participant attributes")
     
     # Dispatch the telephony_agent when participant connects
     # This is required because agent_name="telephony_agent" disables automatic dispatch
