@@ -75,18 +75,30 @@ class TimelineSimulationOutput(BaseModel):
     vibe_check_warnings: list[str] = Field(default_factory=list, description="Personality-career friction warnings")
 
 
-TIMELINE_SIMULATION_PROMPT = ChatPromptTemplate.from_messages([
-    ("system", """You are an expert career simulation engine. Generate detailed, realistic year-by-year career roadmaps with comprehensive reasoning.
+class SinglePathOutput(BaseModel):
+    """Output for a single career path generation."""
+    path: CareerPathOutput = Field(description="The generated career path")
 
-Generate THREE distinct paths:
-1. **CONSERVATIVE PATH**: Safe, methodical approach with buffer time for setbacks (add 1-2 extra years)
-2. **REALISTIC PATH**: Balanced approach with reasonable expectations
-3. **AMBITIOUS PATH**: Aggressive timeline assuming optimal execution (reduce by 6-12 months)
+
+class RecommendationOutput(BaseModel):
+    """Output for path recommendation."""
+    recommended_path: str = Field(description="One of: conservative, realistic, ambitious")
+    recommendation_reason: str = Field(description="Why this path is recommended")
+    alignment_score: float = Field(description="How well paths align with user preferences (0-100)")
+    vibe_check_warnings: list[str] = Field(default_factory=list, description="Personality-career friction warnings")
+
+
+# Prompt for generating a single path
+SINGLE_PATH_PROMPT = ChatPromptTemplate.from_messages([
+    ("system", """You are an expert career simulation engine. Generate a detailed, realistic year-by-year career roadmap.
+
+You are generating a **{path_type}** path:
+{path_description}
 
 For EACH year, provide:
 - 4 milestones (one per quarter) with specific activities, costs, and time estimates
-- **Phase reasoning**: Why this phase (Preparation/Transition/Growth) is appropriate now
-- **Focus reasoning**: Why this is the right thing to focus on at this stage
+- Phase reasoning: Why this phase (Preparation/Transition/Growth) is appropriate now
+- Focus reasoning: Why this is the right thing to focus on at this stage
 - Expected role and salary if employed
 - Skills to be acquired
 - Risk mitigation strategies
@@ -94,9 +106,9 @@ For EACH year, provide:
 - Potential setbacks to watch for
 
 For EACH milestone, provide:
-- **Reasoning**: Why this milestone is critical for career progression
-- **Dependencies**: What must be completed before this milestone
-- **Risk if skipped**: Consequences of not completing this milestone
+- Reasoning: Why this milestone is critical for career progression
+- Dependencies: What must be completed before this milestone
+- Risk if skipped: Consequences of not completing this milestone
 
 Be SPECIFIC:
 - Name actual courses (Coursera, Udemy, etc.)
@@ -105,11 +117,9 @@ Be SPECIFIC:
 - Provide realistic cost estimates
 - Include job search activities where appropriate
 
-CRITICAL: Every decision must be justified with clear reasoning based on the user's profile, market conditions, and career goals.
-
 NEVER leave arrays empty. Each year must have 4 milestones."""),
 
-    ("human", """Generate a {simulation_years}-year career simulation with detailed reasoning:
+    ("human", """Generate a {total_years}-year {path_type} career path:
 
 **CANDIDATE SUMMARY:**
 {profile_summary}
@@ -135,7 +145,6 @@ NEVER leave arrays empty. Each year must have 4 milestones."""),
 - Learning Mode: {learning_mode}
 - Investment Capacity: {investment}
 - Risk Tolerance: {risk_tolerance}
-- Optimism Level: {optimism}
 
 **MARKET CONDITIONS:**
 - Demand Level: {demand_level}
@@ -143,12 +152,27 @@ NEVER leave arrays empty. Each year must have 4 milestones."""),
 - Entry Salary Range: {entry_salary}
 - Senior Salary Range: {senior_salary}
 
-**PERSONALITY FACTORS:**
-- Work Style: {work_style}
-- Role Preference: {role_preference}
-- Identified Frictions: {frictions}
+Generate the complete {path_type} career path with detailed milestones for each quarter of each year.""")
+])
 
-Generate detailed career paths with specific milestones, costs, and timelines for each quarter of each year.""")
+
+# Prompt for recommendation after paths are generated
+RECOMMENDATION_PROMPT = ChatPromptTemplate.from_messages([
+    ("system", """You are a career advisor. Based on the candidate's profile and the three career paths provided, recommend the best path and explain why."""),
+    ("human", """**CANDIDATE PROFILE:**
+- Risk Tolerance: {risk_tolerance}
+- Optimism Level: {optimism}
+- Hours Available/Week: {hours_week}
+- Work Style: {work_style}
+
+**THREE PATHS GENERATED:**
+1. Conservative ({conservative_years} years): {conservative_label}
+2. Realistic ({realistic_years} years): {realistic_label}  
+3. Ambitious ({ambitious_years} years): {ambitious_label}
+
+**PERSONALITY FRICTIONS:** {frictions}
+
+Which path do you recommend and why? Consider the candidate's risk tolerance, time availability, and personality.""")
 ])
 
 
@@ -156,7 +180,7 @@ def timeline_simulator_node(state: CareerSimulationState) -> dict:
     """
     Node D: TimelineSimulator
     Generates year-by-year career simulation with multiple paths.
-    Uses structured output for reliable data extraction.
+    Generates each path separately to avoid JSON parsing errors with large outputs.
     """
     start_time = time.time()
     
@@ -167,11 +191,11 @@ def timeline_simulator_node(state: CareerSimulationState) -> dict:
     
     # Determine simulation length based on gap
     if gap and gap.overall_gap_score > 70:
-        simulation_years = 6
+        base_years = 6
     elif gap and gap.overall_gap_score > 40:
-        simulation_years = 5
+        base_years = 5
     else:
-        simulation_years = 4
+        base_years = 4
     
     # Get salary ranges from market
     entry_salary = "$50,000 - $80,000"
@@ -203,48 +227,80 @@ def timeline_simulator_node(state: CareerSimulationState) -> dict:
         all_frictions = gap.personality_frictions + gap.stress_risks
         frictions = "; ".join(all_frictions[:3])
     
-    # Get LLM with structured output
+    # Common parameters for all paths
+    common_params = {
+        "profile_summary": normalized.profile_summary if normalized else "Profile not available",
+        "education_level": profile.current_education_level or "Not specified",
+        "years_to_grad": normalized.years_to_graduation if normalized else "Unknown",
+        "current_skills": str(normalized.combined_technical_skills) if normalized else "Not assessed",
+        "target_roles": ", ".join(profile.specific_roles) if profile.specific_roles else "Software Engineer",
+        "career_goal": profile.primary_career_goal or "Career advancement",
+        "desired_level": profile.desired_role_level or "Senior IC",
+        "gap_score": round(gap.overall_gap_score, 1) if gap else 50,
+        "critical_gaps": critical_gaps,
+        "skill_gaps": skill_gaps,
+        "education_gap": gap.education_gap if gap and gap.education_gap else "None",
+        "hours_week": profile.hours_per_week or 20,
+        "learning_mode": ", ".join(profile.preferred_learning_mode) if profile.preferred_learning_mode else "Self-paced",
+        "investment": profile.investment_capacity or "Medium ($5,000-15,000)",
+        "risk_tolerance": profile.risk_tolerance or "Medium",
+        "demand_level": demand_level,
+        "competition_level": competition_level,
+        "entry_salary": entry_salary,
+        "senior_salary": senior_salary,
+    }
+    
+    # Path configurations
+    path_configs = {
+        "conservative": {
+            "total_years": base_years + 1,
+            "description": "Safe, methodical approach with extra buffer time for setbacks. Add 1-2 extra years, lower risk, focus on thorough preparation."
+        },
+        "realistic": {
+            "total_years": base_years,
+            "description": "Balanced approach with reasonable expectations. Standard timeline based on gap analysis, moderate pace."
+        },
+        "ambitious": {
+            "total_years": max(base_years - 1, 3),
+            "description": "Aggressive timeline assuming optimal execution. Compressed timeline, higher intensity, assumes everything goes well."
+        }
+    }
+    
     llm = get_llm(temperature=0.5)
+    target_role = profile.specific_roles[0] if profile.specific_roles else "Software Engineer"
     
     try:
-        structured_llm = llm.with_structured_output(TimelineSimulationOutput)
-        chain = TIMELINE_SIMULATION_PROMPT | structured_llm
+        # Generate each path separately
+        paths = {}
+        for path_type, config in path_configs.items():
+            print(f"Generating {path_type} path...")
+            path_output = _generate_single_path(
+                llm, path_type, config, common_params
+            )
+            if path_output:
+                paths[path_type] = _convert_career_path(path_output, path_type)
+            else:
+                # Use fallback for this path
+                paths[path_type] = _create_fallback_path(path_type, config["total_years"], target_role, gap)
         
-        simulation_output: TimelineSimulationOutput = chain.invoke({
-            "simulation_years": simulation_years,
-            "profile_summary": normalized.profile_summary if normalized else "Profile not available",
-            "education_level": profile.current_education_level or "Not specified",
-            "years_to_grad": normalized.years_to_graduation if normalized else "Unknown",
-            "current_skills": str(normalized.combined_technical_skills) if normalized else "Not assessed",
-            "target_roles": ", ".join(profile.specific_roles) if profile.specific_roles else "Software Engineer",
-            "career_goal": profile.primary_career_goal or "Career advancement",
-            "desired_level": profile.desired_role_level or "Senior IC",
-            "gap_score": round(gap.overall_gap_score, 1) if gap else 50,
-            "critical_gaps": critical_gaps,
-            "skill_gaps": skill_gaps,
-            "education_gap": gap.education_gap if gap and gap.education_gap else "None",
-            "hours_week": profile.hours_per_week or 20,
-            "learning_mode": ", ".join(profile.preferred_learning_mode) if profile.preferred_learning_mode else "Self-paced",
-            "investment": profile.investment_capacity or "Medium ($5,000-15,000)",
-            "risk_tolerance": profile.risk_tolerance or "Medium",
-            "optimism": profile.optimism_level or "Balanced",
-            "demand_level": demand_level,
-            "competition_level": competition_level,
-            "entry_salary": entry_salary,
-            "senior_salary": senior_salary,
-            "work_style": profile.work_style or "Balanced",
-            "role_preference": profile.role_preference or "Flexible",
-            "frictions": frictions,
-        })
+        # Generate recommendation
+        recommendation = _generate_recommendation(
+            llm, paths, profile, frictions
+        )
         
-        # Convert to TimelineSimulation model
-        timeline_simulation = _convert_to_timeline_simulation(simulation_output)
+        timeline_simulation = TimelineSimulation(
+            recommended_path=recommendation.get("recommended_path", "realistic"),
+            recommendation_reason=recommendation.get("recommendation_reason", "Based on your profile, the realistic path provides the best balance."),
+            alignment_score=recommendation.get("alignment_score", 75.0),
+            vibe_check_warnings=recommendation.get("vibe_check_warnings", []),
+            conservative_path=paths["conservative"],
+            realistic_path=paths["realistic"],
+            ambitious_path=paths["ambitious"],
+        )
         
     except Exception as e:
-        # Fallback if structured output fails
-        print(f"Structured output failed, using fallback: {e}")
-        target_role = profile.specific_roles[0] if profile.specific_roles else "Software Engineer"
-        timeline_simulation = _create_fallback_simulation(simulation_years, target_role, gap)
+        print(f"Path generation failed, using fallback: {e}")
+        timeline_simulation = _create_fallback_simulation(base_years, target_role, gap)
     
     processing_time = (time.time() - start_time) * 1000
     
@@ -255,21 +311,58 @@ def timeline_simulator_node(state: CareerSimulationState) -> dict:
     }
 
 
-def _convert_to_timeline_simulation(output: TimelineSimulationOutput) -> TimelineSimulation:
-    """Convert structured LLM output to TimelineSimulation model."""
-    simulation = TimelineSimulation(
-        recommended_path=output.recommended_path,
-        recommendation_reason=output.recommendation_reason,
-        alignment_score=output.alignment_score,
-        vibe_check_warnings=output.vibe_check_warnings,
-    )
-    
-    # Convert paths
-    simulation.conservative_path = _convert_career_path(output.conservative_path, "conservative")
-    simulation.realistic_path = _convert_career_path(output.realistic_path, "realistic")
-    simulation.ambitious_path = _convert_career_path(output.ambitious_path, "ambitious")
-    
-    return simulation
+def _generate_single_path(llm, path_type: str, config: dict, common_params: dict) -> Optional[CareerPathOutput]:
+    """Generate a single career path using structured output."""
+    try:
+        structured_llm = llm.with_structured_output(SinglePathOutput)
+        chain = SINGLE_PATH_PROMPT | structured_llm
+        
+        result: SinglePathOutput = chain.invoke({
+            **common_params,
+            "path_type": path_type.upper(),
+            "path_description": config["description"],
+            "total_years": config["total_years"],
+        })
+        return result.path
+    except Exception as e:
+        print(f"Failed to generate {path_type} path: {e}")
+        return None
+
+
+def _generate_recommendation(llm, paths: dict, profile, frictions: str) -> dict:
+    """Generate path recommendation based on all three paths."""
+    try:
+        structured_llm = llm.with_structured_output(RecommendationOutput)
+        chain = RECOMMENDATION_PROMPT | structured_llm
+        
+        result: RecommendationOutput = chain.invoke({
+            "risk_tolerance": profile.risk_tolerance or "Medium",
+            "optimism": profile.optimism_level or "Balanced",
+            "hours_week": profile.hours_per_week or 20,
+            "work_style": profile.work_style or "Balanced",
+            "conservative_years": paths["conservative"].total_years,
+            "conservative_label": paths["conservative"].path_label,
+            "realistic_years": paths["realistic"].total_years,
+            "realistic_label": paths["realistic"].path_label,
+            "ambitious_years": paths["ambitious"].total_years,
+            "ambitious_label": paths["ambitious"].path_label,
+            "frictions": frictions,
+        })
+        
+        return {
+            "recommended_path": result.recommended_path,
+            "recommendation_reason": result.recommendation_reason,
+            "alignment_score": result.alignment_score,
+            "vibe_check_warnings": result.vibe_check_warnings,
+        }
+    except Exception as e:
+        print(f"Failed to generate recommendation: {e}")
+        return {
+            "recommended_path": "realistic",
+            "recommendation_reason": "Based on your profile, the realistic path provides the best balance of speed and risk management.",
+            "alignment_score": 75.0,
+            "vibe_check_warnings": [],
+        }
 
 
 def _convert_career_path(path_output: CareerPathOutput, path_type: str) -> CareerPath:
