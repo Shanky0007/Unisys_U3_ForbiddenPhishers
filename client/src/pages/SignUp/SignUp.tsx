@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertCircle, Eye, EyeOff, LinkIcon, Loader2 } from "lucide-react";
+import { AlertCircle, Eye, EyeOff, Sparkles, Loader2 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { signupSchema} from "@/validation/userSchema";
 import type{ signupUser } from "@/validation/userSchema";
@@ -56,33 +56,31 @@ const SignUpForm: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-gradient-to-br from-olive-50 to-neutral-50">
-      <div
-        className="absolute inset-0 z-0 opacity-30"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23ffffff' fill-opacity='0.1' fill-rule='evenodd'/%3E%3C/svg%3E")`,
-          backgroundSize: "100px 100px",
-        }}
-      />
+    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-background">
+      {/* Background decorations */}
+      <div className="absolute inset-0 -z-10 overflow-hidden">
+        <div className="absolute top-20 left-10 w-72 h-72 bg-primary/5 rounded-full blur-3xl" />
+        <div className="absolute bottom-20 right-10 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
+      </div>
 
-      <div className="w-full max-w-xl  z-10 flex items-center justify-center">
-        <Card className="w-full h-full backdrop-blur-sm bg-white shadow-xl border-0">
+      <div className="w-full max-w-xl z-10 flex items-center justify-center">
+        <Card className="w-full h-full backdrop-blur-sm bg-card shadow-xl border border-border">
           <CardHeader className="space-y-1 flex flex-col items-center pt-8">
             <div className="flex items-center space-x-3 mb-3">
-              <div className="w-12 h-12 bg-olive-600 rounded-xl flex items-center justify-center shadow-lg">
-                <LinkIcon className="text-white w-6 h-6" />
+              <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center shadow-lg">
+                <Sparkles className="text-primary-foreground w-6 h-6" />
               </div>
-              <CardTitle className="text-3xl font-bold text-gray-800">
-                PrepX
+              <CardTitle className="text-3xl font-bold text-foreground">
+                CareerPath
               </CardTitle>
             </div>
           </CardHeader>
           <CardContent className="space-y-6 px-8 py-5">
             <div className="space-y-2 text-center">
-              <h2 className="text-3xl font-semibold tracking-tight text-gray-800">
+              <h2 className="text-3xl font-semibold tracking-tight text-foreground">
                 Sign Up
               </h2>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-muted-foreground">
                 Enter your information to create an account
               </p>
               {errors.root && (
@@ -97,7 +95,7 @@ const SignUpForm: React.FC = () => {
               <div className="space-y-2">
                 <Label
                   htmlFor="username"
-                  className="text-sm font-medium text-gray-700"
+                  className="text-sm font-medium text-foreground"
                 >
                   Username
                 </Label>
@@ -106,7 +104,7 @@ const SignUpForm: React.FC = () => {
                   id="username"
                   placeholder="John Doe"
                   required
-                  className="transition-all duration-200 focus:ring-2 focus:ring-olive-500"
+                  className="transition-all duration-200 focus:ring-2 focus:ring-primary"
                 />
                 {errors.username && (
                   <p className="text-red-500">{errors.username.message}</p>
@@ -115,7 +113,7 @@ const SignUpForm: React.FC = () => {
               <div className="space-y-2">
                 <Label
                   htmlFor="email"
-                  className="text-sm font-medium text-gray-700"
+                  className="text-sm font-medium text-foreground"
                 >
                   Email
                 </Label>
@@ -125,7 +123,7 @@ const SignUpForm: React.FC = () => {
                   type="email"
                   placeholder="m@example.com"
                   required
-                  className="transition-all duration-200 focus:ring-2 focus:ring-olive-500"
+                  className="transition-all duration-200 focus:ring-2 focus:ring-primary"
                 />
                 {errors.email && (
                   <p className="text-red-500">{errors.email.message}</p>
@@ -134,7 +132,7 @@ const SignUpForm: React.FC = () => {
               <div className="space-y-2">
                 <Label
                   htmlFor="phone"
-                  className="text-sm font-medium text-gray-700"
+                  className="text-sm font-medium text-foreground"
                 >
                   Phone Number
                 </Label>
@@ -147,7 +145,7 @@ const SignUpForm: React.FC = () => {
                       defaultCountry="US"
                       value={value}
                       onChange={onChange}
-                      className="phone-input-custom transition-all duration-200 focus:ring-2 focus:ring-olive-500 rounded-md border border-gray-300 px-3 py-2"
+                      className="phone-input-custom transition-all duration-200 focus:ring-2 focus:ring-primary rounded-md border border-border px-3 py-2"
                     />
                   )}
                 />
@@ -158,7 +156,7 @@ const SignUpForm: React.FC = () => {
               <div className="space-y-2">
                 <Label
                   htmlFor="password"
-                  className="text-sm font-medium text-gray-700"
+                  className="text-sm font-medium text-foreground"
                 >
                   Password
                 </Label>
@@ -171,7 +169,7 @@ const SignUpForm: React.FC = () => {
                     type={showPassword ? "text" : "password"}
                     placeholder="Your password"
                     required
-                    className="transition-all duration-200 focus:ring-2 focus:ring-olive-500 pr-10"
+                    className="transition-all duration-200 focus:ring-2 focus:ring-primary pr-10"
                   />
                   <button
                     type="button"
@@ -196,7 +194,7 @@ const SignUpForm: React.FC = () => {
               </div>
               <Button
                 disabled={isSubmitting}
-                className="w-full bg-olive-600 hover:bg-olive-700 text-white shadow-lg transition-all duration-200 hover:shadow-xl"
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg transition-all duration-200 hover:shadow-xl"
                 type="submit"
               >
                 {isSubmitting && <Loader2 className="h-5 w-5 animate-spin" />}{" "}
@@ -205,10 +203,10 @@ const SignUpForm: React.FC = () => {
             </form>
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-gray-300" />
+                <span className="w-full border-t border-border" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-white px-2 text-gray-500">
+                <span className="bg-card px-2 text-muted-foreground">
                   Or continue with
                 </span>
               </div>
@@ -216,11 +214,11 @@ const SignUpForm: React.FC = () => {
             <div className="grid grid-cols-2 gap-4">
                 <SocialButtons/>
             </div>
-            <div className="text-center text-sm text-gray-600">
+            <div className="text-center text-sm text-muted-foreground">
               Already have an account?{" "}
               <Link
                 to="/login"
-                className="font-medium text-olive-600 hover:text-olive-800 hover:underline"
+                className="font-medium text-primary hover:text-primary/80 hover:underline"
               >
                 Log In
               </Link>

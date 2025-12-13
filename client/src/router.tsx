@@ -12,6 +12,7 @@ import PasswordResetForm from "@/pages/ForgotPassword/PasswordResetForm";
 import SimulatePage from "./pages/SimulatePage/SimulatePage";
 import CareerFitsPage from "./pages/CareerFitsPage/CareerFitsPage";
 import DashboardPage from "./pages/DashboardPage/DashboardPage";
+import IndustryInsightsPage from "./pages/IndustryInsightsPage/IndustryInsightsPage";
 
 const mainLayoutRoutes = [
     {
@@ -71,6 +72,10 @@ const router = createBrowserRouter([
             {
                 path: "/dashboard",
                 element: <DashboardPage />,
+            },
+            {
+                path: "/industry-insights",
+                element: <IndustryInsightsPage />,
             }
 
         ],
