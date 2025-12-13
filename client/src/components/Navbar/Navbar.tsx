@@ -6,7 +6,7 @@ import { useSelector, useDispatch } from "react-redux";
 import type { RootState } from "@/store/store";
 import { logout } from "@/store/auth/authSlice";
 import { motion } from "framer-motion";
-import { Menu, X, User, LogOut, ChevronDown, Sparkles } from "lucide-react";
+import { Menu, X, User, LogOut, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
     DropdownMenu,
@@ -17,46 +17,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import {
-    Collapsible,
-    CollapsibleContent,
-    CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-
-const navGroups = [
-    {
-        label: "Interview & Practice",
-        links: [
-            { href: "/interview", label: "Mock Interview" },
-            { href: "/interview-help", label: "Interview AI Assistant" },
-            { href: "/interview-questions", label: "DSA Questions" },
-            { href: "/your-interviews", label: "Your Interviews" },
-        ],
-    },
-    {
-        label: "Learning & Tools",
-        links: [
-            { href: "/roadmaps", label: "Roadmap" },
-            { href: "/Whiteboard", label: "Whiteboard" },
-            { href: "/pdf-chat", label: "PDF Chat" },
-            { href: "/resume-evaluate", label: "Resume Evaluate" },
-        ],
-    },
-    {
-        label: "Assessment",
-        links: [
-            { href: "/quiz", label: "Quiz" },
-            { href: "/quiz-history", label: "Quiz History" },
-            { href: "/insights", label: "Insights" },
-        ],
-    },
-];
 
 const Navbar = () => {
     const [isOpen, setIsOpen] = useState<boolean>(false);
     const [activeLink, setActiveLink] = useState<string>("/");
     const [scrolled, setScrolled] = useState<boolean>(false);
-    const [openGroups, setOpenGroups] = useState<{ [key: string]: boolean }>({});
 
     const isLoggedIn = useSelector((state: RootState) => state.auth.isLoggedIn);
     const user = useSelector((state: RootState) => state.auth.user);
@@ -80,17 +45,6 @@ const Navbar = () => {
     const handleLogout = () => {
         dispatch(logout());
         navigate("/login");
-    };
-
-    const toggleGroup = (groupLabel: string) => {
-        setOpenGroups((prev) => ({
-            ...prev,
-            [groupLabel]: !prev[groupLabel],
-        }));
-    };
-
-    const isGroupActive = (group: (typeof navGroups)[0]) => {
-        return group.links.some((link) => link.href === activeLink);
     };
 
     const NavLink = ({
@@ -133,74 +87,6 @@ const Navbar = () => {
         </Link>
     );
 
-    const NavDropdown = ({ group }: { group: (typeof navGroups)[0] }) => {
-        const isActive = isGroupActive(group);
-
-        return (
-            <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <button className="relative px-4 py-2 group overflow-hidden rounded-lg flex items-center space-x-1">
-                        <motion.span
-                            className={`relative z-10 text-sm font-medium transition-colors duration-300 ${isActive
-                                    ? "text-primary-foreground"
-                                    : "text-muted-foreground group-hover:text-foreground"
-                                }`}
-                        >
-                            {group.label}
-                        </motion.span>
-                        <ChevronDown
-                            className={`h-4 w-4 transition-colors duration-300 ${isActive
-                                    ? "text-primary-foreground"
-                                    : "text-muted-foreground group-hover:text-foreground"
-                                }`}
-                        />
-
-                        {isActive && (
-                            <motion.div
-                                layoutId="nav-pill"
-                                className="absolute inset-0 bg-primary rounded-lg"
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                transition={{ type: "spring", stiffness: 380, damping: 30 }}
-                            />
-                        )}
-
-                        <motion.div
-                            className="absolute inset-0 bg-muted rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                            style={{ zIndex: -1 }}
-                        />
-                    </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                    align="start"
-                    className="w-56 overflow-hidden rounded-xl p-1 shadow-lg border-border"
-                >
-                    <motion.div
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.2 }}
-                    >
-                        {group.links.map((link) => (
-                            <DropdownMenuItem
-                                key={link.href}
-                                onClick={() => {
-                                    setActiveLink(link.href);
-                                    navigate(link.href);
-                                }}
-                                className={`cursor-pointer rounded-lg transition-colors duration-150 py-2 ${activeLink === link.href
-                                        ? "bg-primary text-primary-foreground"
-                                        : "hover:bg-muted"
-                                    }`}
-                            >
-                                <span>{link.label}</span>
-                            </DropdownMenuItem>
-                        ))}
-                    </motion.div>
-                </DropdownMenuContent>
-            </DropdownMenu>
-        );
-    };
-
     const MobileNavLink = ({
         href,
         label,
@@ -225,49 +111,6 @@ const Navbar = () => {
             </Link>
         </motion.div>
     );
-
-    const MobileNavGroup = ({ group }: { group: (typeof navGroups)[0] }) => {
-        const isActive = isGroupActive(group);
-        const isExpanded = openGroups[group.label];
-
-        return (
-            <Collapsible
-                open={isExpanded}
-                onOpenChange={() => toggleGroup(group.label)}
-            >
-                <CollapsibleTrigger asChild>
-                    <motion.button
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-base font-medium transition-all duration-200 ${isActive
-                                ? "bg-primary text-primary-foreground shadow-md"
-                                : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                            }`}
-                    >
-                        <span>{group.label}</span>
-                        <ChevronDown
-                            className={`h-4 w-4 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""
-                                }`}
-                        />
-                    </motion.button>
-                </CollapsibleTrigger>
-                <CollapsibleContent className="space-y-1 mt-1 ml-4">
-                    {group.links.map((link) => (
-                        <MobileNavLink
-                            key={link.href}
-                            href={link.href}
-                            label={link.label}
-                            isActive={activeLink === link.href}
-                            onClick={() => {
-                                setActiveLink(link.href);
-                                setIsOpen(false);
-                            }}
-                        />
-                    ))}
-                </CollapsibleContent>
-            </Collapsible>
-        );
-    };
 
     const UserMenuContent = () => {
         if (!isLoggedIn) {
@@ -333,13 +176,6 @@ const Navbar = () => {
                         </div>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
-                            onClick={() => navigate("/profile")}
-                            className="cursor-pointer hover:bg-muted rounded-lg transition-colors duration-150 py-2"
-                        >
-                            <User className="mr-2 h-4 w-4 text-primary" />
-                            <span>Profile</span>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
                             onClick={handleLogout}
                             className="cursor-pointer hover:bg-destructive/10 rounded-lg transition-colors duration-150 py-2"
                         >
@@ -395,9 +231,6 @@ const Navbar = () => {
                             isActive={activeLink === "/simulate"}
                             onClick={() => setActiveLink("/simulate")}
                         />
-                        {navGroups.map((group) => (
-                            <NavDropdown key={group.label} group={group} />
-                        ))}
                     </nav>
 
                     <div className="flex items-center">
@@ -471,9 +304,6 @@ const Navbar = () => {
                                                     setIsOpen(false);
                                                 }}
                                             />
-                                            {navGroups.map((group) => (
-                                                <MobileNavGroup key={group.label} group={group} />
-                                            ))}
                                         </div>
                                     </motion.div>
 
@@ -523,28 +353,16 @@ const Navbar = () => {
                                                         <p className="text-xs text-muted-foreground">Active now</p>
                                                     </div>
                                                 </div>
-                                                <div className="grid grid-cols-2 gap-3">
-                                                    <Button
-                                                        variant="outline"
-                                                        className="w-full justify-center"
-                                                        onClick={() => {
-                                                            navigate("/profile");
-                                                            setIsOpen(false);
-                                                        }}
-                                                    >
-                                                        Profile
-                                                    </Button>
-                                                    <Button
-                                                        variant="destructive"
-                                                        className="w-full justify-center"
-                                                        onClick={() => {
-                                                            handleLogout();
-                                                            setIsOpen(false);
-                                                        }}
-                                                    >
-                                                        Log out
-                                                    </Button>
-                                                </div>
+                                                <Button
+                                                    variant="destructive"
+                                                    className="w-full justify-center"
+                                                    onClick={() => {
+                                                        handleLogout();
+                                                        setIsOpen(false);
+                                                    }}
+                                                >
+                                                    Log out
+                                                </Button>
                                             </div>
                                         )}
                                     </motion.div>
