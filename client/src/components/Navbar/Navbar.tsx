@@ -6,7 +6,7 @@ import { useSelector, useDispatch } from "react-redux";
 import type { RootState } from "@/store/store";
 import { logout } from "@/store/auth/authSlice";
 import { motion } from "framer-motion";
-import { Menu, X, User, LogOut, ChevronDown } from "lucide-react";
+import { Menu, X, User, LogOut, ChevronDown, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
     DropdownMenu,
@@ -22,7 +22,6 @@ import {
     CollapsibleContent,
     CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import logo from "@/assets/react.svg";
 
 const navGroups = [
     {
@@ -111,7 +110,7 @@ const Navbar = () => {
             onClick={onClick}
         >
             <motion.span
-                className={`relative z-10 text-sm font-medium transition-colors duration-300 ${isActive ? "text-white" : "text-gray-600 group-hover:text-gray-900"
+                className={`relative z-10 text-sm font-medium transition-colors duration-300 ${isActive ? "text-primary-foreground" : "text-muted-foreground group-hover:text-foreground"
                     }`}
             >
                 {label}
@@ -120,7 +119,7 @@ const Navbar = () => {
             {isActive && (
                 <motion.div
                     layoutId="nav-pill"
-                    className="absolute inset-0 bg-olive-600 rounded-lg"
+                    className="absolute inset-0 bg-primary rounded-lg"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ type: "spring", stiffness: 380, damping: 30 }}
@@ -128,7 +127,7 @@ const Navbar = () => {
             )}
 
             <motion.div
-                className="absolute inset-0 bg-gray-100 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                className="absolute inset-0 bg-muted rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200"
                 style={{ zIndex: -1 }}
             />
         </Link>
@@ -143,23 +142,23 @@ const Navbar = () => {
                     <button className="relative px-4 py-2 group overflow-hidden rounded-lg flex items-center space-x-1">
                         <motion.span
                             className={`relative z-10 text-sm font-medium transition-colors duration-300 ${isActive
-                                    ? "text-white"
-                                    : "text-gray-600 group-hover:text-gray-900"
+                                    ? "text-primary-foreground"
+                                    : "text-muted-foreground group-hover:text-foreground"
                                 }`}
                         >
                             {group.label}
                         </motion.span>
                         <ChevronDown
                             className={`h-4 w-4 transition-colors duration-300 ${isActive
-                                    ? "text-white"
-                                    : "text-gray-600 group-hover:text-gray-900"
+                                    ? "text-primary-foreground"
+                                    : "text-muted-foreground group-hover:text-foreground"
                                 }`}
                         />
 
                         {isActive && (
                             <motion.div
                                 layoutId="nav-pill"
-                                className="absolute inset-0 bg-olive-600 rounded-lg"
+                                className="absolute inset-0 bg-primary rounded-lg"
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 transition={{ type: "spring", stiffness: 380, damping: 30 }}
@@ -167,21 +166,21 @@ const Navbar = () => {
                         )}
 
                         <motion.div
-                            className="absolute inset-0 bg-gray-100 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                            className="absolute inset-0 bg-muted rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200"
                             style={{ zIndex: -1 }}
                         />
                     </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
                     align="start"
-                    className="w-56 overflow-hidden rounded-xl p-1 shadow-lg"
+                    className="w-56 overflow-hidden rounded-xl p-1 shadow-lg border-border"
                 >
                     <motion.div
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.2 }}
                     >
-                        {group.links.map((link, index) => (
+                        {group.links.map((link) => (
                             <DropdownMenuItem
                                 key={link.href}
                                 onClick={() => {
@@ -189,8 +188,8 @@ const Navbar = () => {
                                     navigate(link.href);
                                 }}
                                 className={`cursor-pointer rounded-lg transition-colors duration-150 py-2 ${activeLink === link.href
-                                        ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white"
-                                        : "hover:bg-blue-50"
+                                        ? "bg-primary text-primary-foreground"
+                                        : "hover:bg-muted"
                                     }`}
                             >
                                 <span>{link.label}</span>
@@ -218,8 +217,8 @@ const Navbar = () => {
                 to={href}
                 onClick={onClick}
                 className={`block px-4 py-3 rounded-xl text-base font-medium transition-all duration-200 ${isActive
-                        ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-md"
-                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                        ? "bg-primary text-primary-foreground shadow-md"
+                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
                     }`}
             >
                 {label}
@@ -241,8 +240,8 @@ const Navbar = () => {
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                         className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-base font-medium transition-all duration-200 ${isActive
-                                ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-md"
-                                : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                                ? "bg-primary text-primary-foreground shadow-md"
+                                : "text-muted-foreground hover:bg-muted hover:text-foreground"
                             }`}
                     >
                         <span>{group.label}</span>
@@ -277,7 +276,7 @@ const Navbar = () => {
                     <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                         <Button
                             variant="ghost"
-                            className="text-gray-700 hover:text-gray-900 hover:bg-gray-50 transition-all duration-200"
+                            className="text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-200"
                             onClick={() => navigate("/login")}
                         >
                             Sign In
@@ -285,7 +284,7 @@ const Navbar = () => {
                     </motion.div>
                     <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                         <Button
-                            className="bg-olive-600 text-white shadow-md hover:bg-olive-700 hover:shadow-lg transition-all duration-200"
+                            className="bg-primary text-primary-foreground shadow-md hover:bg-primary/90 hover:shadow-lg transition-all duration-200"
                             onClick={() => navigate("/signup")}
                         >
                             Sign Up
@@ -307,8 +306,8 @@ const Navbar = () => {
                             whileHover={{ scale: 1.1 }}
                             transition={{ type: "spring", stiffness: 400, damping: 17 }}
                         >
-                            <Avatar className="h-9 w-9 ring-2 ring-offset-2 ring-olive-500 transition-all duration-200">
-                                <AvatarFallback className="bg-olive-600 text-white">
+                            <Avatar className="h-9 w-9 ring-2 ring-offset-2 ring-primary transition-all duration-200">
+                                <AvatarFallback className="bg-primary text-primary-foreground">
                                     {
                                         //@ts-ignore
                                         user?.charAt(0).toUpperCase()
@@ -316,7 +315,7 @@ const Navbar = () => {
                                 </AvatarFallback>
                             </Avatar>
                         </motion.div>
-                        <span className="absolute top-0 right-0 h-2.5 w-2.5 bg-green-500 rounded-full ring-2 ring-white" />
+                        <span className="absolute top-0 right-0 h-2.5 w-2.5 bg-green-500 rounded-full ring-2 ring-background" />
                     </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
@@ -330,21 +329,21 @@ const Navbar = () => {
                     >
                         <div className="px-3 py-2">
                             <p className="text-sm font-medium">{user}</p>
-                            <p className="text-xs text-gray-500 mt-0.5">Active now</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">Active now</p>
                         </div>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
                             onClick={() => navigate("/profile")}
-                            className="cursor-pointer hover:bg-olive-50 rounded-lg transition-colors duration-150 py-2"
+                            className="cursor-pointer hover:bg-muted rounded-lg transition-colors duration-150 py-2"
                         >
-                            <User className="mr-2 h-4 w-4 text-olive-600" />
+                            <User className="mr-2 h-4 w-4 text-primary" />
                             <span>Profile</span>
                         </DropdownMenuItem>
                         <DropdownMenuItem
                             onClick={handleLogout}
-                            className="cursor-pointer hover:bg-red-50 rounded-lg transition-colors duration-150 py-2"
+                            className="cursor-pointer hover:bg-destructive/10 rounded-lg transition-colors duration-150 py-2"
                         >
-                            <LogOut className="mr-2 h-4 w-4 text-red-500" />
+                            <LogOut className="mr-2 h-4 w-4 text-destructive" />
                             <span>Log out</span>
                         </DropdownMenuItem>
                     </motion.div>
@@ -355,9 +354,9 @@ const Navbar = () => {
 
     return (
         <motion.header
-            className={`w-full sticky top-0 z-50 transition-all duration-300 ${scrolled
-                    ? "bg-white/95 backdrop-blur-md shadow-lg"
-                    : "bg-white/80 backdrop-blur-sm"
+            className={`w-full sticky top-0 z-50 transition-all duration-500 ${scrolled
+                    ? "bg-background/80 backdrop-blur-xl shadow-lg border-b border-border/50"
+                    : "bg-background/60 backdrop-blur-sm"
                 }`}
             initial={{ y: -100 }}
             animate={{ y: 0 }}
@@ -365,16 +364,21 @@ const Navbar = () => {
         >
             <div className="max-w-7xl mx-auto">
                 <div className="flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8">
-                    <Link to="/" className="flex items-center">
+                    <Link to="/" className="flex items-center gap-2">
                         <motion.div
-                            whileHover={{ scale: 1.05 }}
+                            whileHover={{ scale: 1.05, rotate: 5 }}
                             transition={{ type: "spring", stiffness: 400, damping: 10 }}
+                            className="flex items-center gap-2"
                         >
-                            <img
-                                src={logo || "/placeholder.svg"}
-                                alt="PrepX"
-                                className="h-20 w-20 object-contain"
-                            />
+                            <div className="relative">
+                                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center">
+                                    <Sparkles className="h-5 w-5 text-primary-foreground" />
+                                </div>
+                                <div className="absolute -inset-1 rounded-xl bg-primary/20 blur-sm -z-10" />
+                            </div>
+                            <span className="text-xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+                                CareerPath
+                            </span>
                         </motion.div>
                     </Link>
 
@@ -386,10 +390,10 @@ const Navbar = () => {
                             onClick={() => setActiveLink("/")}
                         />
                         <NavLink
-                            href="/start-your-path"
-                            label="Start Your Path"
-                            isActive={activeLink === "/start-your-path"}
-                            onClick={() => setActiveLink("/start-your-path")}
+                            href="/simulate"
+                            label="Start Simulation"
+                            isActive={activeLink === "/simulate"}
+                            onClick={() => setActiveLink("/simulate")}
                         />
                         {navGroups.map((group) => (
                             <NavDropdown key={group.label} group={group} />
@@ -412,29 +416,30 @@ const Navbar = () => {
                             </SheetTrigger>
                             <SheetContent
                                 side="right"
-                                className="p-0 bg-white border-l border-gray-100 w-[85vw] max-w-[320px]"
+                                className="p-0 bg-background border-l border-border w-[85vw] max-w-[320px]"
                             >
                                 <div className="flex flex-col h-full">
                                     <motion.div
-                                        className="p-4 border-b flex items-center justify-between"
+                                        className="p-4 border-b border-border flex items-center justify-between"
                                         initial={{ opacity: 0, y: -20 }}
                                         animate={{ opacity: 1, y: 0 }}
                                         transition={{ duration: 0.3 }}
                                     >
                                         <div>
-                                            <img
-                                                src={logo || "/placeholder.svg"}
-                                                alt="NEXT HIRE"
-                                                className="h-8 w-auto"
-                                            />
-                                            <p className="mt-2 text-sm text-gray-500">
-                                                Revolutionizing Placement Preparation with AI
+                                            <div className="flex items-center gap-2">
+                                                <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center">
+                                                    <Sparkles className="h-4 w-4 text-primary-foreground" />
+                                                </div>
+                                                <span className="text-lg font-bold">CareerPath</span>
+                                            </div>
+                                            <p className="mt-2 text-sm text-muted-foreground">
+                                                AI-Powered Career Planning
                                             </p>
                                         </div>
                                         <Button
                                             variant="ghost"
                                             size="icon"
-                                            className="rounded-full hover:bg-gray-100"
+                                            className="rounded-full hover:bg-muted"
                                             onClick={() => setIsOpen(false)}
                                         >
                                             <X className="h-5 w-5" />
@@ -458,11 +463,11 @@ const Navbar = () => {
                                                 }}
                                             />
                                             <MobileNavLink
-                                                href="/start-your-path"
-                                                label="Start Your Path"
-                                                isActive={activeLink === "/start-your-path"}
+                                                href="/simulate"
+                                                label="Start Simulation"
+                                                isActive={activeLink === "/simulate"}
                                                 onClick={() => {
-                                                    setActiveLink("/start-your-path");
+                                                    setActiveLink("/simulate");
                                                     setIsOpen(false);
                                                 }}
                                             />
@@ -473,7 +478,7 @@ const Navbar = () => {
                                     </motion.div>
 
                                     <motion.div
-                                        className="p-4 border-t"
+                                        className="p-4 border-t border-border"
                                         initial={{ opacity: 0 }}
                                         animate={{ opacity: 1 }}
                                         transition={{ delay: 0.2 }}
@@ -491,7 +496,7 @@ const Navbar = () => {
                                                     Sign In
                                                 </Button>
                                                 <Button
-                                                    className="w-full bg-olive-600 hover:bg-olive-700"
+                                                    className="w-full bg-primary hover:bg-primary/90"
                                                     onClick={() => {
                                                         navigate("/signup");
                                                         setIsOpen(false);
@@ -503,8 +508,8 @@ const Navbar = () => {
                                         ) : (
                                             <div>
                                                 <div className="flex items-center mb-4">
-                                                    <Avatar className="h-10 w-10 ring-2 ring-offset-2 ring-olive-500">
-                                                        <AvatarFallback className="bg-olive-600 text-white">
+                                                    <Avatar className="h-10 w-10 ring-2 ring-offset-2 ring-primary">
+                                                        <AvatarFallback className="bg-primary text-primary-foreground">
                                                             {
                                                                 //@ts-ignore
                                                                 user?.charAt(0).toUpperCase()
@@ -512,10 +517,10 @@ const Navbar = () => {
                                                         </AvatarFallback>
                                                     </Avatar>
                                                     <div className="ml-3">
-                                                        <p className="text-base font-medium text-gray-800">
+                                                        <p className="text-base font-medium">
                                                             {user}
                                                         </p>
-                                                        <p className="text-xs text-gray-500">Active now</p>
+                                                        <p className="text-xs text-muted-foreground">Active now</p>
                                                     </div>
                                                 </div>
                                                 <div className="grid grid-cols-2 gap-3">
