@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 from livekit import agents, rtc, api
 from livekit.agents import AgentServer, AgentSession, Agent, room_io, RunContext
 from livekit.agents import function_tool
-from livekit.plugins import google
+from livekit.plugins import google, bey
 from src.database import connect_to_mongodb, get_user_by_phone, get_user_by_id, get_career_roadmap_by_user_id
 
 # Load environment variables
@@ -475,6 +475,23 @@ async def career_voice_agent(ctx: agents.JobContext):
             language="en-US",
         ),
     )
+    
+    # For web connections, start the Beyond Presence avatar
+    # Avatar provides a visual representation of the career counselor
+    if not is_phone_call:
+        try:
+            print("🎭 Starting Beyond Presence avatar for web session...")
+            avatar = bey.AvatarSession(
+                avatar_id="b9be11b8-89fb-4227-8f86-4a881393cbdb",  # Default Beyond Presence avatar
+                avatar_participant_identity="career-counselor-avatar",
+                avatar_participant_name="Career Counselor",
+            )
+            # Start the avatar and wait for it to join
+            await avatar.start(session, room=ctx.room)
+            print("✅ Beyond Presence avatar started successfully")
+        except Exception as avatar_error:
+            print(f"⚠️ Failed to start avatar (continuing without): {avatar_error}")
+            # Continue without avatar if it fails - voice will still work
     
     # Start the session
     await session.start(
